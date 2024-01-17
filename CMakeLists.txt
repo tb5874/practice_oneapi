@@ -21,12 +21,13 @@
             # pi_opencl
             # pi_win_proxy_loader
         # 2024.0.1.45_offline.exe
+            # cmd -> setx SETVARS_CONFIG " "
             # C:\Program Files (x86)\Intel\oneAPI\setvars.bat
             # C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
-            # sycl7
-            # pi_opencl
-            # pi_win_proxy_loader
-            # libmmd
+            # sycl7.dll
+            # pi_opencl.dll
+            # pi_win_proxy_loader.dll
+            # libmmd.dll
     # Ubuntu2204
         # 'intel-i915-dkms'
             # install is not necessary condition.

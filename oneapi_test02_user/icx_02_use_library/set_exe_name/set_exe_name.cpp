@@ -12,7 +12,7 @@ int main(void) {
         test_compare();
 
     }
-    catch (std::exception& e) {
+    catch (std::exception e) {
         printf("Exception : %s\n", e.what());
     }
     catch (...) {

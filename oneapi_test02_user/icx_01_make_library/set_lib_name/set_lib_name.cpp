@@ -297,7 +297,7 @@ void std_mem_set(std::string get_type, void*& get_ptr, std::vector<int64_t> get_
             //           [ type* ( 001 ) ][ type ( 000 ~ 1D ) ]
             //           [ type* ( ... ) ][ type ( 000 ~ 1D ) ]
             //           [ type* ( 2D  ) ][ type ( 000 ~ 1D ) ]
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         // [ Type 02, malloc style ]
@@ -357,7 +357,7 @@ void std_mem_init(std::string get_type, void*& get_ptr, std::vector<int64_t> get
             }
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         if (debug_flag) {
@@ -412,7 +412,7 @@ void std_mem_free(std::string get_type, void*& get_ptr, std::vector<int64_t> get
             //     delete ((type**)get_ptr)[iter_2D]
             //     ((type**)get_ptr)[iter_2D] = nullptr
             // delete ((type**)get_ptr);
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         // [ Type 02, free style ] 
@@ -442,24 +442,69 @@ void std_iter_print(std::string get_type, void*& get_buf, std::vector<int64_t> g
             sizeof_count = sizeof_count * get_dim.at(iter);
         }
 
-        if (get_type == "char*") {
-            for (int64_t iter = 0; iter < sizeof_count; iter++) {
-                if(debug_flag) printf("Func : %s(%s) : [ idx %lld : %d ]\n", __func__, get_type.c_str(), iter, ((char*)get_buf)[iter]);
+        for (int64_t iter = 0; iter < sizeof_count; iter++) {
+            if (debug_flag) printf("Func : %s(%s) : index ", __func__, get_type.c_str());
+            int64_t dim_div = 1;
+            int64_t dim_mod = 0;
+            for (int64_t iter_dim = (get_dim.size()-1); iter_dim >= 0; iter_dim--) {
+                dim_div = dim_div * get_dim.at(iter_dim);
+                dim_mod = sizeof_count / dim_div;
+
+                if (iter_dim == (get_dim.size()-1) ) {
+                    if (debug_flag) printf("[ %3lld", iter / dim_mod);
+                }
+                else if ( iter_dim != 0 ){
+                    if (debug_flag) printf(",%3lld", iter / dim_mod);
+                }
+                else {
+                    if (debug_flag) printf(",%3lld ] ", iter % get_dim.at(0));
+                }
+
+                //if (iter_dim == get_dim.size()) {
+                //    if (debug_flag) printf("[ %3lld,", iter % dim_mod);
+                //    if (debug_flag) printf("%3lld", iter / dim_mod);
+                //}
+                //else if ( iter_dim != (get_dim.size()-1) ) {
+                //    if (debug_flag) printf(",%3lld", iter / dim_mod);
+                //}
+                //else {
+                //    if (debug_flag) printf(" ] ");
+                //}
             }
-        }
-        else if (get_type == "int*") {
-            for (int64_t iter = 0; iter < sizeof_count; iter++) {
-                if (debug_flag) printf("Func : %s(%s) : [ idx %lld : %d ]\n", __func__, get_type.c_str(), iter, ((int*)get_buf)[iter]);
+
+            if (get_type == "char*") {
+                if (debug_flag) printf("value : %d\n", ((char*)get_buf)[iter]);
             }
-        }
-        else if (get_type == "float*") {
-            for (int64_t iter = 0; iter < sizeof_count; iter++) {
-                if (debug_flag) printf("Func : %s(%s) : [ idx %lld : %f ]\n", __func__, get_type.c_str(), iter, ((float*)get_buf)[iter]);
+            else if (get_type == "int*") {
+                if (debug_flag) printf("value : %d\n", ((int*)get_buf)[iter]);
             }
+            else if (get_type == "float*") {
+                if (debug_flag) printf("value : %f\n", ((float*)get_buf)[iter]);
+            }
+            else {
+                throw std::runtime_error("need to update");
+            }
+
         }
-        else {
-            throw std::exception("need to update");
-        }
+         
+        //if (get_type == "char*") {
+        //    for (int64_t iter = 0; iter < sizeof_count; iter++) {
+        //        if(debug_flag) printf("Func : %s(%s) : [ idx %lld : %d ]\n", __func__, get_type.c_str(), iter, ((char*)get_buf)[iter]);
+        //    }
+        //}
+        //else if (get_type == "int*") {
+        //    for (int64_t iter = 0; iter < sizeof_count; iter++) {
+        //        if (debug_flag) printf("Func : %s(%s) : [ idx %lld : %d ]\n", __func__, get_type.c_str(), iter, ((int*)get_buf)[iter]);
+        //    }
+        //}
+        //else if (get_type == "float*") {
+        //    for (int64_t iter = 0; iter < sizeof_count; iter++) {
+        //        if (debug_flag) printf("Func : %s(%s) : [ idx %lld : %f ]\n", __func__, get_type.c_str(), iter, ((float*)get_buf)[iter]);
+        //    }
+        //}
+        //else {
+        //    throw std::runtime_error("need to update");
+        //}
 
     }
     CATCH_MACRO
@@ -488,7 +533,7 @@ void std_iter_compare(std::string get_type, void*& get_buf_a, void*& get_buf_b, 
                 bool result_flag = (buf_a[itr] == buf_b[itr]);
                 if (result_flag == false) {
                     printf("index : %lld is different.\n", itr);
-                    throw std::exception("fail");
+                    throw std::runtime_error("fail");
                 }
             }
 
@@ -502,7 +547,7 @@ void std_iter_compare(std::string get_type, void*& get_buf_a, void*& get_buf_b, 
                 bool result_flag = (buf_a[itr] == buf_b[itr]);
                 if (result_flag == false) {
                     printf("index : %lld is different.\n", itr);
-                    throw std::exception("fail");
+                    throw std::runtime_error("fail");
                 }
             }
 
@@ -517,13 +562,13 @@ void std_iter_compare(std::string get_type, void*& get_buf_a, void*& get_buf_b, 
                 bool result_flag = ( get_tolerance < std::numeric_limits<float>::epsilon() );
                 if (result_flag == false) {
                     printf("index : %lld is different.\n", itr);
-                    throw std::exception("fail");
+                    throw std::runtime_error("fail");
                 }
             }
 
         }        
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         printf("Func : %s() : all index is same.\n", ((std::string)__func__).c_str());
@@ -606,7 +651,7 @@ void std_kernel_iter_add(std::string get_type, void*& get_buf_a, void*& get_buf_
 
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
     }
@@ -694,7 +739,7 @@ void std_kernel_iter_matmul(std::string get_type, void*& get_buf_a, void*& get_b
 
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
     }
     CATCH_MACRO
@@ -725,20 +770,21 @@ void std_kernel_iter_matmul(std::string get_type, void*& get_buf_a, void*& get_b
 void test_sycl(void) {
     try {
 
-        test_sycl_variable();
-        test_sycl_selector();
-        test_sycl_device();
-        test_sycl_queue();
-        test_sycl_info();
-        test_sycl_memory();
-        test_sycl_memory_4GB();
-        test_sycl_dimension();
-        test_sycl_buffer_from_host();
-        test_sycl_buffer_from_sycl();
-        test_sycl_usm();
-        test_sycl_random();
-        test_sycl_usm_add();
-        test_sycl_usm_matmul();
+        //test_sycl_variable();
+        //test_sycl_selector();
+        //test_sycl_device();
+        //test_sycl_queue();
+        //test_sycl_info();
+        //test_sycl_memory();
+        //test_sycl_memory_4GB();
+        //test_sycl_dimension();
+        //test_sycl_buffer_from_host();
+        //test_sycl_buffer_from_sycl();
+        //test_sycl_usm();
+        //test_sycl_random();
+        //test_sycl_usm_add();
+        //test_sycl_usm_matmul();
+        test_sycl_parallel_for();
 
     }
     CATCH_MACRO
@@ -1535,6 +1581,69 @@ void test_sycl_random(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void test_sycl_random2(void) {
+    try {
+
+        TEST_TITLE_MACRO
+
+        int64_t M = 64;
+
+        std::vector<int64_t> dim_a;
+        dim_a.clear();
+        dim_a.push_back(M);
+
+        void* device_ptr = nullptr;
+        void* queue_ptr = nullptr;
+
+        void* ptr_a = nullptr;
+        void* ptr_sycl_a = nullptr;
+
+        // [ Test ]
+        for (int iter_device = 0; iter_device < static_dev.size(); iter_device++) {
+
+            sycl_device(static_dev.at(iter_device), device_ptr);
+            sycl_queue("device", queue_ptr, device_ptr);
+
+            for (int iter_dtype = 0; iter_dtype < static_dtype.size(); iter_dtype++) {
+
+                printf("\nFunc : data type : %s\n", static_dtype.at(iter_dtype).c_str());
+
+                for (int iter_mtype = 0; iter_mtype < static_mtype.size(); iter_mtype++) {
+
+                    printf("\nFunc : memory type : %s\n", static_mtype.at(iter_mtype).c_str());
+
+                    std_mem_set(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                    std_mem_init(static_dtype.at(iter_dtype), ptr_a, dim_a, (double)0.0, false);
+
+                    sycl_mem_set(static_dtype.at(iter_dtype), static_mtype.at(iter_mtype), queue_ptr, ptr_sycl_a, dim_a, false);
+                    sycl_mem_init(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, (double)0.0, false);
+
+                    sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
+
+                    sycl_kernel_random2(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
+
+                    sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
+
+                    std_iter_print(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+
+                    sycl_mem_free(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
+                    std_mem_free(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                }
+            }
+
+            sycl_delete("queue", queue_ptr);
+            sycl_delete("device", device_ptr);
+
+        }
+
+    }
+    CATCH_MACRO
+
+    return;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void test_sycl_usm_add(void) {
     try {
 
@@ -1732,6 +1841,92 @@ void test_sycl_usm_matmul(void) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+// [ Test ]
+// parallel_for()
+// inside function, can't use std::string
+// 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void test_sycl_parallel_for(void) {
+    try {
+
+        TEST_TITLE_MACRO
+
+        int64_t M = 10;
+        int64_t N = 1000;
+
+        // Matrix input x : [ M x N ]
+        std::vector<int64_t> dim_x;
+        dim_x.clear();
+        dim_x.push_back(N);
+        dim_x.push_back(M);
+
+        // Matrix output y : [ M x N ]
+        std::vector<int64_t> dim_y;
+        dim_y.clear();
+        dim_y.push_back(N);
+        dim_y.push_back(M);
+
+        void* device_ptr = nullptr;
+        void* queue_ptr = nullptr;
+
+        void* ptr_x = nullptr;
+        void* ptr_y = nullptr;
+
+        void* ptr_sycl_x = nullptr;
+        void* ptr_sycl_y = nullptr;
+
+        for (int iter_device = 0; iter_device < static_dev.size(); iter_device++) {
+
+            sycl_device(static_dev.at(iter_device), device_ptr);
+            sycl_queue("device", queue_ptr, device_ptr);
+
+            for (int iter_dtype = 0; iter_dtype < static_dtype.size(); iter_dtype++) {
+
+                printf("\nFunc : data type : %s\n", static_dtype.at(iter_dtype).c_str());
+
+                for (int iter_mtype = 0; iter_mtype < static_mtype.size(); iter_mtype++) {
+
+                    printf("\nFunc : memory type : %s\n", static_mtype.at(iter_mtype).c_str());
+
+                    std_mem_set(static_dtype.at(iter_dtype), ptr_x, dim_x, false);
+                    std_mem_init(static_dtype.at(iter_dtype), ptr_x, dim_x, (double)1.0, false);
+                    sycl_mem_set(static_dtype.at(iter_dtype), static_mtype.at(iter_mtype), queue_ptr, ptr_sycl_x, dim_x, false);
+                    sycl_mem_init(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_x, dim_x, (double)0.0, false);
+
+                    std_mem_set(static_dtype.at(iter_dtype), ptr_y, dim_y, false);
+                    std_mem_init(static_dtype.at(iter_dtype), ptr_y, dim_y, (double)0.0, false);
+                    sycl_mem_set(static_dtype.at(iter_dtype), static_mtype.at(iter_mtype), queue_ptr, ptr_sycl_y, dim_y, false);
+                    sycl_mem_init(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_y, dim_y, (double)0.0, false);
+
+                    sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_x, ptr_x, dim_x, false);
+
+                    sycl_kernel_parallel_for(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_x, ptr_sycl_y, dim_x, true);
+
+                    sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_y, ptr_sycl_y, dim_y, false);
+                    std_iter_print(static_dtype.at(iter_dtype), ptr_y, dim_y, true);
+
+                    sycl_mem_free(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_x, dim_x, false);
+                    sycl_mem_free(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_y, dim_y, false);
+                    std_mem_free(static_dtype.at(iter_dtype), ptr_x, dim_x, false);
+                    std_mem_free(static_dtype.at(iter_dtype), ptr_y, dim_y, false);
+
+                }
+
+            }
+
+            sycl_delete("queue", queue_ptr);
+            sycl_delete("device", device_ptr);
+
+        }
+
+    }
+    CATCH_MACRO
+
+    return;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void sycl_selector(std::string get_type, void*& selector_ptr) {
     try {
@@ -1750,10 +1945,10 @@ void sycl_selector(std::string get_type, void*& selector_ptr) {
             selector_ptr = (void*)&sycl::gpu_selector_v;
         }
         else if (get_type == "aspect") {
-            throw std::exception("can't reference sycl::aspect_selector function address");
+            throw std::runtime_error("can't reference sycl::aspect_selector function address");
         }
         else {
-            throw std::exception("you need to update");
+            throw std::runtime_error("you need to update");
         }
 
         if (false) {
@@ -1821,7 +2016,7 @@ void sycl_device(std::string get_type, void*& device_ptr) {
             //(*(sycl::device*)device_ptr) = sycl::device(sycl::aspect_selector(std::vector{ sycl::aspect::cpu, sycl::aspect::fp64, sycl::aspect::fp16 }) );
         }
         else {
-            throw std::exception("you need to check");
+            throw std::runtime_error("you need to check");
         }
 
     }
@@ -1847,7 +2042,7 @@ void sycl_queue(std::string get_type, void*& queue_ptr, void*& get_ptr) {
             (*(sycl::queue*)queue_ptr) = sycl::queue(*((sycl::device*)get_ptr));
         }
         else {
-            throw std::exception("you need to update");
+            throw std::runtime_error("you need to update");
         }
 
         // for sycl library pre-load : -->
@@ -1883,7 +2078,7 @@ void sycl_delete(std::string get_type, void*& get_ptr) {
             get_ptr = nullptr;
         }
         else {
-            throw std::exception("you need to update");
+            throw std::runtime_error("you need to update");
         }
 
     }
@@ -1922,7 +2117,7 @@ void sycl_mem_set(std::string get_type, std::string get_method, void*& queue_ptr
                 get_ptr = (void*)sycl::malloc_shared<char>(sizeof_count, (*(sycl::queue*)queue_ptr));
             }
             else {
-                throw std::exception("need to update");
+                throw std::runtime_error("need to update");
             }
         }
         else if (get_type == "int*") {
@@ -1939,7 +2134,7 @@ void sycl_mem_set(std::string get_type, std::string get_method, void*& queue_ptr
                 get_ptr = (void*)sycl::malloc_shared<int>(sizeof_count, (*(sycl::queue*)queue_ptr));
             }
             else {
-                throw std::exception("need to update");
+                throw std::runtime_error("need to update");
             }
         }
         else if (get_type == "float*") {
@@ -1956,11 +2151,11 @@ void sycl_mem_set(std::string get_type, std::string get_method, void*& queue_ptr
                 get_ptr = (void*)sycl::malloc_shared<float>(sizeof_count, (*(sycl::queue*)queue_ptr));
             }
             else {
-                throw std::exception("need to update");
+                throw std::runtime_error("need to update");
             }
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         ((sycl::queue*)queue_ptr)->wait();
@@ -2012,7 +2207,7 @@ void sycl_mem_init(std::string get_type, void*& queue_ptr, void*& get_ptr, std::
             ((sycl::queue*)queue_ptr)->memset(get_ptr, value, sizeof_byte * sizeof_count);
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         ((sycl::queue*)queue_ptr)->wait();
@@ -2054,7 +2249,7 @@ void sycl_mem_copy(std::string get_type, void*& queue_ptr, void*& dst_ptr, void*
             ((sycl::queue*)queue_ptr)->memcpy(dst_ptr, src_ptr, sizeof_byte * sizeof_count);
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         ((sycl::queue*)queue_ptr)->wait();
@@ -2099,7 +2294,7 @@ void sycl_mem_free(std::string get_type, void*& queue_ptr, void*& get_ptr, std::
             get_ptr = nullptr;
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
         ((sycl::queue*)queue_ptr)->wait();
@@ -2326,7 +2521,7 @@ void sycl_kernel_buffer(std::string get_type, void*& queue_ptr, void*& get_buf_a
             }
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
     }
     CATCH_MACRO
@@ -2450,14 +2645,14 @@ void sycl_kernel_usm(std::string get_type, void*& queue_ptr, void*& get_buf_a, v
             }
         }
         else if (get_type == "float**") {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
     }
-    catch (std::exception& e) {
+    catch (std::runtime_error& e) {
         printf("Exception : %s() : %s\n", __func__, e.what());
     }
     catch (...) {
@@ -2561,7 +2756,110 @@ void sycl_kernel_random(std::string get_type, void*& queue_ptr, void*& get_buf, 
 
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
+        }
+
+    }
+    CATCH_MACRO
+
+    return;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void sycl_kernel_random2(std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag) {
+    try {
+
+        FUNC_TYPE_MACRO
+
+        std::chrono::system_clock::time_point time_tick;
+        std::chrono::duration<double>time_tok;
+
+        sycl::queue* q = (sycl::queue*)queue_ptr;
+
+        int64_t sizeof_count = 1;
+        for (int64_t iter = 0; iter < get_dim.size(); iter++) {
+            sizeof_count = sizeof_count * get_dim.at(iter);
+        }
+        int get_seed = 777;
+        float dist_a = 0.0f;
+        float dist_b = 1.0f;
+        int range_mod = 10; // 0 ~ 9
+
+        if (get_type == "char*") {
+
+            time_tick = std::chrono::system_clock::now();
+            q->submit(\
+                [&](auto& h) {
+                    h.parallel_for(
+                        sycl::range(sizeof_count), [=](auto index) {
+                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
+                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
+                            float get_value = get_distribution(get_engine);
+
+                            ((char*)get_buf)[(int64_t)index] = (int)(get_value * 10000.0f) % range_mod;
+                        }
+                    );
+                }
+            );
+            q->wait();
+            time_tok = std::chrono::system_clock::now() - time_tick;
+            if (debug_flag) {
+                FUNC_TIME_MACRO
+            }
+
+        }
+        else if (get_type == "int*") {
+
+            time_tick = std::chrono::system_clock::now();
+            q->submit(\
+                [&](auto& h) {
+                    h.parallel_for(
+                        sycl::range(sizeof_count), [=](auto index) {
+                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
+                            // 2024.01.12 - when device is gpu, can't use fp64. In here, something is fp64 : -->
+                            //oneapi::dpl::uniform_int_distribution<int> get_distribution(dist_a, dist_b);
+                            // 2024.01.12 - when device is gpu, can't use fp64. In here, something is fp64 : <--
+                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
+                            float get_value = get_distribution(get_engine);
+
+                            ((int*)get_buf)[(int64_t)index] = (int)(get_value * 10000.0f) % range_mod;
+                        }
+                    );
+                }
+            );
+            q->wait();
+            time_tok = std::chrono::system_clock::now() - time_tick;
+            if (debug_flag) {
+                FUNC_TIME_MACRO
+            }
+
+        }
+        else if (get_type == "float*") {
+
+            time_tick = std::chrono::system_clock::now();
+            q->submit(\
+                [&](auto& h) {
+                    h.parallel_for(
+                        sycl::range(sizeof_count), [=](auto index) {
+                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
+                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
+                            float get_value = get_distribution(get_engine);
+
+                            ((float*)get_buf)[(int64_t)index] = get_value;
+                        }
+                    );
+                }
+            );
+            q->wait();
+            time_tok = std::chrono::system_clock::now() - time_tick;
+            if (debug_flag) {
+                FUNC_TIME_MACRO
+            }
+
+        }
+        else {
+            throw std::runtime_error("need to update");
         }
 
     }
@@ -2664,7 +2962,7 @@ void sycl_kernel_usm_add(std::string get_type, void*& queue_ptr, void*& get_buf_
 
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
     }
@@ -2781,7 +3079,7 @@ void sycl_kernel_usm_matmul(std::string get_type, void*& queue_ptr, void*& get_b
 
         }
         else {
-            throw std::exception("need to update");
+            throw std::runtime_error("need to update");
         }
 
     }
@@ -2792,7 +3090,61 @@ void sycl_kernel_usm_matmul(std::string get_type, void*& queue_ptr, void*& get_b
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void sycl_kernel_parallel_for(std::string get_type, void*& queue_ptr, void*& get_buf_x, void*& get_buf_y, std::vector<int64_t> get_dim, bool debug_flag) {
+    try {
 
+        FUNC_NAME_MACRO
+
+        std::chrono::system_clock::time_point time_tick;
+        std::chrono::duration<double>time_tok;
+
+        int64_t get_col = get_dim.at(0);
+        int64_t get_row = get_dim.at(1);
+
+        sycl::queue* q = (sycl::queue*)queue_ptr;
+
+        if (get_type == "float*") {            
+
+            time_tick = std::chrono::system_clock::now();
+            q->submit (
+                [&](sycl::handler& h) {
+                    h.parallel_for (
+                        sycl::range(get_row), [=](auto index) {
+
+                            void* buf_x = get_buf_x;
+                            void* buf_exp = get_buf_y;
+
+                            int64_t softmax_start = index * get_col;
+                            int64_t softmax_count = get_col;
+
+                            float softmax_denominator = 0.0f;
+
+                            func_softmax_denominator(buf_x, softmax_start, softmax_count, softmax_denominator, buf_exp);
+
+                            func_softmax(buf_exp, softmax_start, softmax_count, softmax_denominator);
+
+                        }
+                    );
+                }
+            );
+            q->wait();
+            time_tok = std::chrono::system_clock::now() - time_tick;
+            if (debug_flag) {
+                FUNC_TIME_MACRO
+            }
+
+        }
+        else {
+            throw std::runtime_error("sycl_kernel_parallel_for() only use float.");
+        }
+
+    }
+    CATCH_MACRO
+
+    return;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -3036,70 +3388,37 @@ void test_compare_matmul(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void func_softmax_denominator(void*& buf_x, int64_t softmax_start, int64_t softmax_count, float& softmax_denominator, void*& buf_exp) {
 
+    float* get_x = (float*)buf_x;
+    float* get_y = (float*)buf_exp;
 
+    for (int64_t idx = 0; idx < softmax_count; idx++) {
+        int64_t get_idx = softmax_start + idx;
+        float get_expf = std::expf( get_x[get_idx] );
 
+        get_y[get_idx] = get_expf;
 
+        softmax_denominator += get_expf;
 
+    }
 
+    return;
+}
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void func_softmax(void*& buf_exp, int64_t softmax_start, int64_t softmax_count, float softmax_denominator) {
 
+    float* get_y = (float*)buf_exp;
 
+    for (int64_t idx = 0; idx < softmax_count; idx++) {
+        int64_t get_idx = softmax_start + idx;
+        get_y[get_idx] = get_y[get_idx] / softmax_denominator;
+    }
 
+    return;
 
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -179,10 +179,10 @@ printf("Func : %s() / Line : %d / %f sec\n", ((std::string)__func__).c_str(), __
 // exception catch macro
 #define CATCH_MACRO \
 catch (std::exception& e) {\
-    printf("Func : %s() : Exception : %s\n", __func__, e.what());\
+    printf("Func : %s() : Exception : %s\n", ((std::string)__func__).c_str(), e.what());\
 }\
 catch (...) {\
-    printf("Func : %s() : Exception : unknown exception\n", __func__);\
+    printf("Func : %s() : Exception : unknown exception\n", ((std::string)__func__).c_str());\
 }
 
 #include <exception>
@@ -194,6 +194,9 @@ catch (...) {\
 
 #include <sycl/sycl.hpp>
 #include <oneapi/dpl/random>
+#include <oneapi/mkl/blas.hpp>
+#include <oneapi/mkl/rng.hpp>
+
 //#include <sycl/ext/oneapi/backend/level_zero.hpp> ???
 //#include <sycl/ext/oneapi/backend/opencl.hpp> ???
 //#include <sycl/backend/level_zero.hpp> ???
@@ -242,8 +245,10 @@ extern "C" DLL_FLAG void test_sycl_buffer_from_host (void);
 extern "C" DLL_FLAG void test_sycl_buffer_from_sycl (void);
 extern "C" DLL_FLAG void test_sycl_usm              (void);
 extern "C" DLL_FLAG void test_sycl_random           (void);
+extern "C" DLL_FLAG void test_sycl_random2          (void);
 extern "C" DLL_FLAG void test_sycl_usm_add          (void);
 extern "C" DLL_FLAG void test_sycl_usm_matmul       (void);
+extern "C" DLL_FLAG void test_sycl_parallel_for     (void);
 
 extern "C" DLL_FLAG void sycl_selector              (std::string get_type, void*& selector_ptr);
 extern "C" DLL_FLAG void sycl_device                (std::string get_type, void*& device_ptr);
@@ -258,8 +263,10 @@ extern "C" DLL_FLAG void sycl_kernel_dimension      (std::string get_type, void*
 extern "C" DLL_FLAG void sycl_kernel_buffer         (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, int64_t get_m, int64_t get_n, int64_t get_p, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_usm            (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, int64_t get_m, int64_t get_n, int64_t get_p, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_random         (std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
+extern "C" DLL_FLAG void sycl_kernel_random2        (std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_usm_add        (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, std::vector<int64_t> get_dim, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_usm_matmul     (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, int64_t get_m, int64_t get_n, int64_t get_p, bool debug_flag);
+extern "C" DLL_FLAG void sycl_kernel_parallel_for   (std::string get_type, void*& queue_ptr, void*& get_buf_x, void*& get_buf_y, std::vector<int64_t> get_dim, bool debug_flag);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -270,55 +277,7 @@ extern "C" DLL_FLAG void test_compare_matmul(void);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+extern "C" DLL_FLAG void func_softmax_denominator(void*& buf_x, int64_t softmax_start, int64_t softmax_count, float& softmax_denominator, void*& buf_exp);
+extern "C" DLL_FLAG void func_softmax(void*& buf_exp, int64_t softmax_start, int64_t softmax_count, float softmax_denominator);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//extern "C" DLL_FLAG void test_sycl_host_use_buffer  (void);
-//extern "C" DLL_FLAG void test_sycl_host_copy_buffer (void);
-//extern "C" DLL_FLAG void test_sycl_usm              (void);
-//extern "C" DLL_FLAG void test_sycl_math_add         (void);
-//extern "C" DLL_FLAG void test_sycl_math_matmul      (void);
-//
-//
-//
-//
-//
-//
-//extern "C" DLL_FLAG void std_iter_add(std::string get_type, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_row, const int& get_col);
-//extern "C" DLL_FLAG void std_iter_matmul(std::string get_type, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_m, const int& get_n, const int& get_p);
-//extern "C" DLL_FLAG void std_iter_compare(std::string get_type, void*& get_buf_a, void*& get_buf_b, const int& get_row, const int& get_col);
-//
-//
-//
-//extern "C" DLL_FLAG void sycl_buffer_sample     (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_m, const int& get_n, const int& get_p);
-//extern "C" DLL_FLAG void sycl_buffer_add        (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_row, const int& get_col);
-//extern "C" DLL_FLAG void sycl_buffer_matmul     (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_m, const int& get_n, const int& get_p);
-//
-//extern "C" DLL_FLAG void sycl_usm_sample        (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_m, const int& get_n, const int& get_p);
-//extern "C" DLL_FLAG void sycl_usm_add           (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_row, const int& get_col);
-//extern "C" DLL_FLAG void sycl_usm_matmul        (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, const int& get_m, const int& get_n, const int& get_p);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

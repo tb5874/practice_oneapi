@@ -118,7 +118,6 @@ if(WIN32)
             ">"
             # add directory path
             "${CMAKE_CURRENT_SOURCE_DIR}"
-            "C:/Program Files (x86)/Intel/oneAPI/dpl/2022.3/include/"
         ">"
     )
 elseif(UNIX)
