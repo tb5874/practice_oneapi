@@ -5,7 +5,7 @@
 void static_setup(void) {
     try {
 
-        // device type
+        // device
         static_dev.clear();
         static_dev.push_back("default");    // if you have gpu, default is gpu. if not, cpu.
         static_dev.push_back("cpu");
@@ -23,6 +23,13 @@ void static_setup(void) {
         static_mtype.push_back("host");
         static_mtype.push_back("device");
         static_mtype.push_back("shared");
+
+        // oneMKL - RNG( Random Number Generator )
+        static_rng.clear();
+        static_rng.push_back("philox4x32x10");
+        static_rng.push_back("mrg32k3a");
+        static_rng.push_back("mcg31m1");
+        static_rng.push_back("mcg59");
 
     }
     CATCH_MACRO
@@ -451,7 +458,14 @@ void std_iter_print(std::string get_type, void*& get_buf, std::vector<int64_t> g
                 dim_mod = sizeof_count / dim_div;
 
                 if (iter_dim == (get_dim.size()-1) ) {
-                    if (debug_flag) printf("[ %3lld", iter / dim_mod);
+                    if (debug_flag) {
+                        if (iter_dim == 0) {
+                            printf("[ %3lld ]", iter / dim_mod);
+                        }
+                        else {
+                            printf("[ %3lld", iter / dim_mod);
+                        }
+                    }
                 }
                 else if ( iter_dim != 0 ){
                     if (debug_flag) printf(",%3lld", iter / dim_mod);
@@ -770,20 +784,21 @@ void std_kernel_iter_matmul(std::string get_type, void*& get_buf_a, void*& get_b
 void test_sycl(void) {
     try {
 
-        //test_sycl_variable();
-        //test_sycl_selector();
-        //test_sycl_device();
-        //test_sycl_queue();
-        //test_sycl_info();
-        //test_sycl_memory();
+        test_sycl_variable();
+        test_sycl_selector();
+        test_sycl_device();
+        test_sycl_queue();
+        test_sycl_info();
+        test_sycl_memory();
         //test_sycl_memory_4GB();
-        //test_sycl_dimension();
-        //test_sycl_buffer_from_host();
-        //test_sycl_buffer_from_sycl();
-        //test_sycl_usm();
-        //test_sycl_random();
-        //test_sycl_usm_add();
-        //test_sycl_usm_matmul();
+        test_sycl_dimension();
+        test_sycl_buffer_from_host();
+        test_sycl_buffer_from_sycl();
+        test_sycl_usm();
+        test_sycl_random_dpl();
+        test_sycl_random_mkl();
+        test_sycl_usm_add();
+        test_sycl_usm_matmul();
         test_sycl_parallel_for();
 
     }
@@ -1518,12 +1533,12 @@ void test_sycl_usm(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void test_sycl_random(void) {
+void test_sycl_random_dpl(void) {
     try {
 
         TEST_TITLE_MACRO
 
-        int64_t M = 64;
+        int64_t M = 10;
 
         std::vector<int64_t> dim_a;
         dim_a.clear();
@@ -1557,11 +1572,11 @@ void test_sycl_random(void) {
 
                     sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
 
-                    sycl_kernel_random(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
+                    sycl_kernel_random_dpl(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
 
                     sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
 
-                    std_iter_print(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                    std_iter_print(static_dtype.at(iter_dtype), ptr_a, dim_a, true);
 
                     sycl_mem_free(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
                     std_mem_free(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
@@ -1581,12 +1596,12 @@ void test_sycl_random(void) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void test_sycl_random2(void) {
+void test_sycl_random_mkl(void) {
     try {
 
         TEST_TITLE_MACRO
 
-        int64_t M = 64;
+        int64_t M = 10;
 
         std::vector<int64_t> dim_a;
         dim_a.clear();
@@ -1594,9 +1609,14 @@ void test_sycl_random2(void) {
 
         void* device_ptr = nullptr;
         void* queue_ptr = nullptr;
+        //void* rng_ptr = nullptr;
 
         void* ptr_a = nullptr;
         void* ptr_sycl_a = nullptr;
+        
+
+        //std::uint64_t get_seed = 777;
+        std::uint64_t get_seed = std::time(NULL);
 
         // [ Test ]
         for (int iter_device = 0; iter_device < static_dev.size(); iter_device++) {
@@ -1604,31 +1624,38 @@ void test_sycl_random2(void) {
             sycl_device(static_dev.at(iter_device), device_ptr);
             sycl_queue("device", queue_ptr, device_ptr);
 
-            for (int iter_dtype = 0; iter_dtype < static_dtype.size(); iter_dtype++) {
+            for (int iter_rng = 0; iter_rng < static_rng.size(); iter_rng++) {
 
-                printf("\nFunc : data type : %s\n", static_dtype.at(iter_dtype).c_str());
+                //sycl_mkl_rng(static_rng.at(iter_rng), queue_ptr, rng_ptr, get_seed);
 
-                for (int iter_mtype = 0; iter_mtype < static_mtype.size(); iter_mtype++) {
+                for (int iter_dtype = 0; iter_dtype < static_dtype.size(); iter_dtype++) {
 
-                    printf("\nFunc : memory type : %s\n", static_mtype.at(iter_mtype).c_str());
+                    printf("\nFunc : data type : %s\n", static_dtype.at(iter_dtype).c_str());
 
-                    std_mem_set(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
-                    std_mem_init(static_dtype.at(iter_dtype), ptr_a, dim_a, (double)0.0, false);
+                    for (int iter_mtype = 0; iter_mtype < static_mtype.size(); iter_mtype++) {
 
-                    sycl_mem_set(static_dtype.at(iter_dtype), static_mtype.at(iter_mtype), queue_ptr, ptr_sycl_a, dim_a, false);
-                    sycl_mem_init(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, (double)0.0, false);
+                        printf("\nFunc : memory type : %s\n", static_mtype.at(iter_mtype).c_str());
 
-                    sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
+                        std_mem_set(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                        std_mem_init(static_dtype.at(iter_dtype), ptr_a, dim_a, (double)0.0, false);
 
-                    sycl_kernel_random2(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
+                        sycl_mem_set(static_dtype.at(iter_dtype), static_mtype.at(iter_mtype), queue_ptr, ptr_sycl_a, dim_a, false);
+                        sycl_mem_init(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, (double)0.0, false);
 
-                    sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
+                        sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
 
-                    std_iter_print(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                        sycl_kernel_random_mkl(static_dtype.at(iter_dtype), queue_ptr, static_rng.at(iter_rng), get_seed, (double)0.4, (double)2.6, ptr_sycl_a, dim_a, false);
 
-                    sycl_mem_free(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
-                    std_mem_free(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                        sycl_mem_copy(static_dtype.at(iter_dtype), queue_ptr, ptr_a, ptr_sycl_a, dim_a, false);
+
+                        std_iter_print(static_dtype.at(iter_dtype), ptr_a, dim_a, true);
+
+                        sycl_mem_free(static_dtype.at(iter_dtype), queue_ptr, ptr_sycl_a, dim_a, false);
+                        std_mem_free(static_dtype.at(iter_dtype), ptr_a, dim_a, false);
+                    }
                 }
+
+                //sycl_mkl_delete(static_rng.at(iter_rng), rng_ptr);
             }
 
             sycl_delete("queue", queue_ptr);
@@ -1640,6 +1667,7 @@ void test_sycl_random2(void) {
     CATCH_MACRO
 
     return;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1853,7 +1881,7 @@ void test_sycl_parallel_for(void) {
         TEST_TITLE_MACRO
 
         int64_t M = 10;
-        int64_t N = 1000;
+        int64_t N = 25;
 
         // Matrix input x : [ M x N ]
         std::vector<int64_t> dim_x;
@@ -2311,6 +2339,60 @@ void sycl_mem_free(std::string get_type, void*& queue_ptr, void*& get_ptr, std::
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void sycl_mkl_rng(std::string get_type, void*& queue_ptr, void*& rng_ptr, std::uint64_t get_seed) {
+    try {
+
+        FUNC_TYPE_MACRO
+
+        if (get_type == "philox4x32x10") {
+
+            rng_ptr = new oneapi::mkl::rng::philox4x32x10((*(sycl::queue*)queue_ptr), get_seed);
+
+        }
+        else if (get_type == "mt19937") {
+
+            rng_ptr = new oneapi::mkl::rng::mt19937((*(sycl::queue*)queue_ptr), (std::uint32_t)get_seed);
+
+        }
+        else {
+            throw std::runtime_error("need to update");
+        }
+
+        ((sycl::queue*)queue_ptr)->wait();
+
+    }
+    CATCH_MACRO
+
+    return;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void sycl_mkl_delete(std::string get_type, void*& mkl_ptr) {
+    try {
+
+        FUNC_TYPE_MACRO
+
+            if (get_type == "philox4x32x10") {
+                delete (oneapi::mkl::rng::philox4x32x10*)mkl_ptr;
+                mkl_ptr = nullptr;
+            }
+            else if (get_type == "mt19937") {
+                delete (oneapi::mkl::rng::mt19937*)mkl_ptr;
+                mkl_ptr = nullptr;
+            }
+            else {
+                throw std::runtime_error("need to update");
+            }
+
+    }
+    CATCH_MACRO
+
+    return;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void sycl_kernel_dimension(std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag) {
     try {
 
@@ -2664,7 +2746,7 @@ void sycl_kernel_usm(std::string get_type, void*& queue_ptr, void*& get_buf_a, v
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void sycl_kernel_random(std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag) {
+void sycl_kernel_random_dpl(std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag) {
     try {
 
         FUNC_TYPE_MACRO
@@ -2678,49 +2760,32 @@ void sycl_kernel_random(std::string get_type, void*& queue_ptr, void*& get_buf, 
         for (int64_t iter = 0; iter < get_dim.size(); iter++) {
             sizeof_count = sizeof_count * get_dim.at(iter);
         }
-        int get_seed = 777;
-        float dist_a = 0.0f;
-        float dist_b = 1.0f;
-        int range_mod = 10; // 0 ~ 9
+
+        std::uint64_t get_seed = 777;
 
         if (get_type == "char*") {
 
-            time_tick = std::chrono::system_clock::now();
-            q->submit(\
-                [&](auto& h) {
-                    h.parallel_for(
-                        sycl::range(sizeof_count), [=](auto index) {
-                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
-                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
-                            float get_value = get_distribution(get_engine);
-
-                            ((char*)get_buf)[(int64_t)index] = (int)(get_value * 10000.0f) % range_mod;
-                        }
-                    );
-                }
-            );
-            q->wait();
-            time_tok = std::chrono::system_clock::now() - time_tick;
-            if (debug_flag) {
-                FUNC_TIME_MACRO
-            }
+            throw std::runtime_error("need to update");
 
         }
         else if (get_type == "int*") {
 
+            throw std::runtime_error("need to update");
+
+            int64_t get_dist_a = 0;
+            int64_t get_dist_b = 64;
+
             time_tick = std::chrono::system_clock::now();
             q->submit(\
                 [&](auto& h) {
                     h.parallel_for(
                         sycl::range(sizeof_count), [=](auto index) {
-                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
                             // 2024.01.12 - when device is gpu, can't use fp64. In here, something is fp64 : -->
-                            //oneapi::dpl::uniform_int_distribution<int> get_distribution(dist_a, dist_b);
+                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
+                            oneapi::dpl::uniform_int_distribution<int> get_distribution(get_dist_a, get_dist_b);
+                            int get_value = get_distribution(get_engine);
+                            ((int*)get_buf)[(int64_t)index] = get_value;
                             // 2024.01.12 - when device is gpu, can't use fp64. In here, something is fp64 : <--
-                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
-                            float get_value = get_distribution(get_engine);
-
-                            ((int*)get_buf)[(int64_t)index] = (int)(get_value * 10000.0f) % range_mod;
                         }
                     );
                 }
@@ -2734,15 +2799,17 @@ void sycl_kernel_random(std::string get_type, void*& queue_ptr, void*& get_buf, 
         }
         else if (get_type == "float*") {
 
+            float get_dist_a = 0.0f;
+            float get_dist_b = 1.0f;
+
             time_tick = std::chrono::system_clock::now();
             q->submit(\
                 [&](auto& h) {
                     h.parallel_for(
                         sycl::range(sizeof_count), [=](auto index) {
                             oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
-                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
+                            oneapi::dpl::uniform_real_distribution<float> get_distribution(get_dist_a, get_dist_b);
                             float get_value = get_distribution(get_engine);
-
                             ((float*)get_buf)[(int64_t)index] = get_value;
                         }
                     );
@@ -2766,8 +2833,20 @@ void sycl_kernel_random(std::string get_type, void*& queue_ptr, void*& get_buf, 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void sycl_kernel_random2(std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag) {
+//
+// sycl_kernel_random_mkl()
+// 
+// #include <oneapi/mkl/rng/device.hpp>
+// oneAPI/mkl/2024.0/include/oneapi/mkl/rng/device/detail/engine_base.hpp
+// all namespace 'oneapi::mkl::rng::device' must be used inside q->parallel_for()
+// oneapi::mkl::rng::device::uniform< type >
+// oneapi::mkl::rng::device::philox4x32x10 : impl
+// oneapi::mkl::rng::device::mrg32k3a : impl
+// oneapi::mkl::rng::device::mcg31m1 : impl
+// oneapi::mkl::rng::device::mcg59 : impl
+// 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void sycl_kernel_random_mkl(std::string get_type, void*& queue_ptr, std::string rng_type, std::uint64_t get_seed, double dist_a, double dist_b, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag) {
     try {
 
         FUNC_TYPE_MACRO
@@ -2775,86 +2854,231 @@ void sycl_kernel_random2(std::string get_type, void*& queue_ptr, void*& get_buf,
         std::chrono::system_clock::time_point time_tick;
         std::chrono::duration<double>time_tok;
 
-        sycl::queue* q = (sycl::queue*)queue_ptr;
+        sycl::queue* q = (sycl::queue*)queue_ptr;        
 
         int64_t sizeof_count = 1;
         for (int64_t iter = 0; iter < get_dim.size(); iter++) {
             sizeof_count = sizeof_count * get_dim.at(iter);
         }
-        int get_seed = 777;
-        float dist_a = 0.0f;
-        float dist_b = 1.0f;
-        int range_mod = 10; // 0 ~ 9
 
         if (get_type == "char*") {
 
-            time_tick = std::chrono::system_clock::now();
-            q->submit(\
-                [&](auto& h) {
-                    h.parallel_for(
-                        sycl::range(sizeof_count), [=](auto index) {
-                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
-                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
-                            float get_value = get_distribution(get_engine);
-
-                            ((char*)get_buf)[(int64_t)index] = (int)(get_value * 10000.0f) % range_mod;
-                        }
-                    );
-                }
-            );
-            q->wait();
-            time_tok = std::chrono::system_clock::now() - time_tick;
-            if (debug_flag) {
-                FUNC_TIME_MACRO
-            }
+            throw std::runtime_error("need to update");
 
         }
-        else if (get_type == "int*") {
+        else if (get_type == "int*") {            
 
-            time_tick = std::chrono::system_clock::now();
-            q->submit(\
-                [&](auto& h) {
-                    h.parallel_for(
-                        sycl::range(sizeof_count), [=](auto index) {
-                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
-                            // 2024.01.12 - when device is gpu, can't use fp64. In here, something is fp64 : -->
-                            //oneapi::dpl::uniform_int_distribution<int> get_distribution(dist_a, dist_b);
-                            // 2024.01.12 - when device is gpu, can't use fp64. In here, something is fp64 : <--
-                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
-                            float get_value = get_distribution(get_engine);
+            int* buf = (int*)get_buf;            
 
-                            ((int*)get_buf)[(int64_t)index] = (int)(get_value * 10000.0f) % range_mod;
-                        }
-                    );
+            int type_a = dist_a;
+            int type_b = dist_b;
+
+            if (rng_type == "philox4x32x10") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {                                
+                                std::uint64_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<int> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::philox4x32x10<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
                 }
-            );
-            q->wait();
-            time_tok = std::chrono::system_clock::now() - time_tick;
-            if (debug_flag) {
-                FUNC_TIME_MACRO
+
             }
+            else if (rng_type == "mrg32k3a") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint32_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<int> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::mrg32k3a<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
+                }
+
+            }
+            else if (rng_type == "mcg31m1") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint32_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<int> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::mcg31m1<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
+                }
+
+            }
+            else if (rng_type == "mcg59") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint32_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<int> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::mcg59<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
+                }
+
+            }
+            else {
+                throw std::runtime_error("need to update");
+            }
+
+            // [ Type 02 ]
+            // 2024.01.23, 'get_buf' must be host ? : -->
+            //sycl::buffer sycl_buf((int*)get_buf, sycl::range(10));
+            //oneapi::mkl::rng::philox4x32x10 engine(*q, 777);
+            //oneapi::mkl::rng::uniform<int> distr(0, 10);
+            //oneapi::mkl::rng::generate(distr, engine, 10, sycl_buf);
+            // 2024.01.23, 'get_buf' must be host ? : <--
 
         }
         else if (get_type == "float*") {
 
-            time_tick = std::chrono::system_clock::now();
-            q->submit(\
-                [&](auto& h) {
-                    h.parallel_for(
-                        sycl::range(sizeof_count), [=](auto index) {
-                            oneapi::dpl::minstd_rand get_engine(get_seed, (int64_t)index);
-                            oneapi::dpl::uniform_real_distribution<float> get_distribution(dist_a, dist_b);
-                            float get_value = get_distribution(get_engine);
+            float* buf = (float*)get_buf;
 
-                            ((float*)get_buf)[(int64_t)index] = get_value;
-                        }
-                    );
+            float type_a = dist_a;
+            float type_b = dist_b;
+
+            if (rng_type == "philox4x32x10") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint64_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<float> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::philox4x32x10<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
                 }
-            );
-            q->wait();
-            time_tok = std::chrono::system_clock::now() - time_tick;
-            if (debug_flag) {
-                FUNC_TIME_MACRO
+
+            }
+            else if (rng_type == "mrg32k3a") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint32_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<float> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::mrg32k3a<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
+                }
+
+            }
+            else if (rng_type == "mcg31m1") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint32_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<float> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::mcg31m1<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
+                }
+
+            }
+            else if (rng_type == "mcg59") {
+
+                time_tick = std::chrono::system_clock::now();
+                q->submit(\
+                    [&](auto& h) {
+                        h.parallel_for(
+                            sycl::range(sizeof_count), [=](auto index) {
+                                std::uint32_t seed = get_seed;
+                                std::uint64_t offset = index;
+                                oneapi::mkl::rng::device::uniform<float> rng_dist(type_a, type_b);
+                                oneapi::mkl::rng::device::mcg59<> rng_engine(seed, offset);
+                                buf[(std::int64_t)index] = oneapi::mkl::rng::device::generate(rng_dist, rng_engine);
+                            }
+                        );
+                    }
+                );
+                q->wait();
+                time_tok = std::chrono::system_clock::now() - time_tick;
+                if (debug_flag) {
+                    FUNC_TIME_MACRO
+                }
+
+            }
+            else {
+                throw std::runtime_error("need to update");
             }
 
         }
@@ -2866,6 +3090,7 @@ void sycl_kernel_random2(std::string get_type, void*& queue_ptr, void*& get_buf,
     CATCH_MACRO
 
     return;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2944,14 +3169,15 @@ void sycl_kernel_usm_add(std::string get_type, void*& queue_ptr, void*& get_buf_
             float* buf_c = (float*)get_buf_c;
 
             time_tick = std::chrono::system_clock::now();
-            q->submit([&](sycl::handler& h) {
-                h.parallel_for(\
-                    sycl::range(get_row, get_col), [=](auto index) {
-                        int64_t target_row = index[0];
-                        int64_t target_col = index[1];
-                        buf_c[c_col * target_row + target_col] = buf_a[a_col * target_row + target_col] + buf_b[b_col * target_row + target_col];
-                    }
-                );
+            q->submit(\
+                [&](sycl::handler& h) {
+                    h.parallel_for(\
+                        sycl::range(get_row, get_col), [=](auto index) {
+                            int64_t target_row = index[0];
+                            int64_t target_col = index[1];
+                            buf_c[c_col * target_row + target_col] = buf_a[a_col * target_row + target_col] + buf_b[b_col * target_row + target_col];
+                        }
+                    );
                 }
             );
             q->wait();
@@ -3184,8 +3410,8 @@ void test_compare_add(void) {
 
         TEST_TITLE_MACRO
 
-        int64_t M = 1024;
-        int64_t N = 1024;
+        int64_t M = 64;
+        int64_t N = 64;
 
         std::vector<int64_t> dim_a;
         dim_a.clear();
@@ -3287,9 +3513,9 @@ void test_compare_matmul(void) {
 
         TEST_TITLE_MACRO
 
-        int64_t M = 1024;
-        int64_t N = 1024;
-        int64_t P = 1024;
+        int64_t M = 64;
+        int64_t N = 64;
+        int64_t P = 64;
 
         std::vector<int64_t> dim_a;
         dim_a.clear();
@@ -3391,15 +3617,17 @@ void test_compare_matmul(void) {
 void func_softmax_denominator(void*& buf_x, int64_t softmax_start, int64_t softmax_count, float& softmax_denominator, void*& buf_exp) {
 
     float* get_x = (float*)buf_x;
-    float* get_y = (float*)buf_exp;
+    float* get_exp = (float*)buf_exp;
 
     for (int64_t idx = 0; idx < softmax_count; idx++) {
+
         int64_t get_idx = softmax_start + idx;
-        float get_expf = std::expf( get_x[get_idx] );
 
-        get_y[get_idx] = get_expf;
+        float get_result = std::expf( get_x[get_idx] );
 
-        softmax_denominator += get_expf;
+        softmax_denominator += get_result;
+
+        get_exp[get_idx] = get_result;
 
     }
 
@@ -3410,11 +3638,15 @@ void func_softmax_denominator(void*& buf_x, int64_t softmax_start, int64_t softm
 
 void func_softmax(void*& buf_exp, int64_t softmax_start, int64_t softmax_count, float softmax_denominator) {
 
-    float* get_y = (float*)buf_exp;
+    float* get_exp = (float*)buf_exp;
+    float get_d = softmax_denominator;
 
     for (int64_t idx = 0; idx < softmax_count; idx++) {
+
         int64_t get_idx = softmax_start + idx;
-        get_y[get_idx] = get_y[get_idx] / softmax_denominator;
+
+        get_exp[get_idx] = get_exp[get_idx] / get_d;
+
     }
 
     return;

@@ -81,6 +81,8 @@ if(WIN32)
             "-fsycl"            # Enables a program to be compiled as a SYCL program rather than as plain C++11 program.
             "-Wall"             # Enables warning and error diagnostics.
             "/Qm64"
+            #"/Qmkl:sequential"
+            #"/Qmkl-ilp64:sequential"
             # For malloc greater than 4GB Test : -->
             #"/IGC_ExtraOCLOptions:-ze-intel-greater-than-4GB-buffer-required"
             #"/IGC_ExtraOCLOptions:-cl-intel-greater-than-4GB-buffer-required"
@@ -139,7 +141,7 @@ if(WIN32)
                 # add flag                
             ">"
             # add flag
-            "-fsycl"            # Enables a program to be compiled as a SYCL program rather than as plain C++11 program.            
+            "-fsycl"            # Enables a program to be compiled as a SYCL program rather than as plain C++11 program.
         ">"
     )
 elseif(UNIX)

@@ -117,7 +117,7 @@ if(WIN32)
                 # add directory path
             ">"
             # add directory path
-            "${CMAKE_CURRENT_SOURCE_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}"            
         ">"
     )
 elseif(UNIX)
@@ -149,7 +149,7 @@ if(WIN32)
             "$<$<CONFIG:Release>:"
                 # add directory path
             ">"
-            # add directory path
+            # add directory path            
         ">"
     )
 elseif(UNIX)
@@ -198,6 +198,8 @@ message(STATUS "${PROJECT_NAME} : ADDITIONAL_LIBRARY_LINK set to ${ADDITIONAL_LI
 ################################################################################
 # Additional setting
 ################################################################################
+#set(### "#####")
+#add_dependencies(${###} #####)
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 ################################################################################

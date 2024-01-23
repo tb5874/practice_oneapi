@@ -2,9 +2,10 @@
 //
 // [ notice ]
 // 
-// 'indent' is 4 space
-// 'int64_t' is input, output
-//
+// indent :  4 space
+// integer : int64_t
+// floating point : float32
+// 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -16,7 +17,7 @@
 // dim.at(001) is 002D, row
 // dim.at(002) is 003D, volume
 // dim.at(003) is 004D, volume count
-// dim.at(...)
+// ...
 // dim.at(###) is ###D, ###
 // 
 // example, 4 dimension
@@ -36,6 +37,7 @@
 //              type (                      +                   + 001 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + ... x 1D  + 000 ~ 1D ),
 //              type (                      +                   + 2D  x 1D  + 000 ~ 1D ),
+// 
 //              type ( 001 x 1D x 2D x 3D   + 000 x 1D x 2D     + 000 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + 001 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + ... x 1D  + 000 ~ 1D ),
@@ -52,6 +54,7 @@
 //              type (                      +                   + 001 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + ... x 1D  + 000 ~ 1D ),
 //              type (                      +                   + 2D  x 1D  + 000 ~ 1D ),
+// 
 //              type ( ... x 1D x 2D x 3D   + 000 x 1D x 2D     + 000 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + 001 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + ... x 1D  + 000 ~ 1D ),
@@ -68,6 +71,7 @@
 //              type (                      +                   + 001 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + ... x 1D  + 000 ~ 1D ),
 //              type (                      +                   + 2D  x 1D  + 000 ~ 1D ),
+// 
 //              type ( 4D  x 1D x 2D x 3D   + 000 x 1D x 2D     + 000 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + 001 x 1D  + 000 ~ 1D ),
 //              type (                      +                   + ... x 1D  + 000 ~ 1D ),
@@ -194,8 +198,8 @@ catch (...) {\
 
 #include <sycl/sycl.hpp>
 #include <oneapi/dpl/random>
-#include <oneapi/mkl/blas.hpp>
-#include <oneapi/mkl/rng.hpp>
+#include <oneapi/mkl.hpp>
+#include <oneapi/mkl/rng/device.hpp>
 
 //#include <sycl/ext/oneapi/backend/level_zero.hpp> ???
 //#include <sycl/ext/oneapi/backend/opencl.hpp> ???
@@ -208,6 +212,7 @@ catch (...) {\
 static std::vector<std::string> static_dev;
 static std::vector<std::string> static_dtype;
 static std::vector<std::string> static_mtype;
+static std::vector<std::string> static_rng;
 
 extern "C" DLL_FLAG void static_setup(void);
 
@@ -244,8 +249,8 @@ extern "C" DLL_FLAG void test_sycl_dimension        (void);
 extern "C" DLL_FLAG void test_sycl_buffer_from_host (void);
 extern "C" DLL_FLAG void test_sycl_buffer_from_sycl (void);
 extern "C" DLL_FLAG void test_sycl_usm              (void);
-extern "C" DLL_FLAG void test_sycl_random           (void);
-extern "C" DLL_FLAG void test_sycl_random2          (void);
+extern "C" DLL_FLAG void test_sycl_random_dpl       (void);
+extern "C" DLL_FLAG void test_sycl_random_mkl       (void);
 extern "C" DLL_FLAG void test_sycl_usm_add          (void);
 extern "C" DLL_FLAG void test_sycl_usm_matmul       (void);
 extern "C" DLL_FLAG void test_sycl_parallel_for     (void);
@@ -259,11 +264,14 @@ extern "C" DLL_FLAG void sycl_mem_init              (std::string get_type, void*
 extern "C" DLL_FLAG void sycl_mem_copy              (std::string get_type, void*& queue_ptr, void*& dst_ptr, void*& src_ptr, std::vector<int64_t> get_dim, bool debug_flag);
 extern "C" DLL_FLAG void sycl_mem_free              (std::string get_type, void*& queue_ptr, void*& get_ptr, std::vector<int64_t> get_dim, bool debug_flag);
 
+extern "C" DLL_FLAG void sycl_mkl_rng               (std::string get_type, void*& queue_ptr, void*& rng_ptr, std::uint64_t get_seed);
+extern "C" DLL_FLAG void sycl_mkl_delete            (std::string get_type, void*& mkl_ptr);
+
 extern "C" DLL_FLAG void sycl_kernel_dimension      (std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_buffer         (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, int64_t get_m, int64_t get_n, int64_t get_p, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_usm            (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, int64_t get_m, int64_t get_n, int64_t get_p, bool debug_flag);
-extern "C" DLL_FLAG void sycl_kernel_random         (std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
-extern "C" DLL_FLAG void sycl_kernel_random2        (std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
+extern "C" DLL_FLAG void sycl_kernel_random_dpl     (std::string get_type, void*& queue_ptr, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
+extern "C" DLL_FLAG void sycl_kernel_random_mkl     (std::string get_type, void*& queue_ptr, std::string rng_type, std::uint64_t get_seed, double dist_a, double dist_b, void*& get_buf, std::vector<int64_t> get_dim, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_usm_add        (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, std::vector<int64_t> get_dim, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_usm_matmul     (std::string get_type, void*& queue_ptr, void*& get_buf_a, void*& get_buf_b, void*& get_buf_c, int64_t get_m, int64_t get_n, int64_t get_p, bool debug_flag);
 extern "C" DLL_FLAG void sycl_kernel_parallel_for   (std::string get_type, void*& queue_ptr, void*& get_buf_x, void*& get_buf_y, std::vector<int64_t> get_dim, bool debug_flag);

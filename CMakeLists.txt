@@ -71,11 +71,13 @@ message(STATUS "${PROJECT_NAME} : CMAKE_RUNTIME_OUTPUT_DIRECTORY set to [${CMAKE
 # Copy
 ################################################################################
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/OpenCL.dll"                  DESTINATION ${CMAKE_BINARY_DIR})
     file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/pi_opencl.dll"               DESTINATION ${CMAKE_BINARY_DIR})
     file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/sycl7d.dll"                  DESTINATION ${CMAKE_BINARY_DIR})
     file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/pi_win_proxy_loaderd.dll"    DESTINATION ${CMAKE_BINARY_DIR})
-    file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/libmmdd.dll"                 DESTINATION ${CMAKE_BINARY_DIR})
+    file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/libmmdd.dll"                 DESTINATION ${CMAKE_BINARY_DIR})    
 else()
+    file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/OpenCL.dll"                  DESTINATION ${CMAKE_BINARY_DIR})
     file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/pi_opencl.dll"               DESTINATION ${CMAKE_BINARY_DIR})
     file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/sycl7.dll"                   DESTINATION ${CMAKE_BINARY_DIR})
     file(COPY "C:/Program Files (x86)/Intel/oneAPI/compiler/2024.0/bin/pi_win_proxy_loader.dll"     DESTINATION ${CMAKE_BINARY_DIR})
@@ -85,5 +87,6 @@ endif()
 ################################################################################
 # Source
 ################################################################################
+
 add_subdirectory(oneapi_test01_official)
 add_subdirectory(oneapi_test02_user)

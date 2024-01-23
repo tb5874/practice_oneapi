@@ -179,7 +179,7 @@ if(WIN32)
         ">"
         "$<$<CONFIG:Release>:"
             # add library
-            "set_lib_name"
+            "set_lib_name"            
         ">"
         # add library
     )
@@ -200,6 +200,8 @@ message(STATUS "${PROJECT_NAME} : ADDITIONAL_LIBRARY_LINK set to ${ADDITIONAL_LI
 ################################################################################
 # Additional setting
 ################################################################################
+#set(### "#####")
+#add_dependencies(${###} #####)
 add_dependencies(${PROJECT_NAME} set_lib_name)
 
 ################################################################################

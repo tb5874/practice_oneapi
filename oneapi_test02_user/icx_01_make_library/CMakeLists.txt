@@ -80,7 +80,14 @@ if(WIN32)
             "/EHsc"             # Specifies the model of exception handling to be performed.            
             "-fsycl"            # Enables a program to be compiled as a SYCL program rather than as plain C++11 program.
             "-Wall"             # Enables warning and error diagnostics.
-            "/Qm64"
+            "/Qm64"            
+            "/Qmkl:sequential"
+            "/Qmkl-ilp64:sequential"
+            #"/DMKL_ILP64"
+            #"/Qmkl:sequential"
+            #"/Qmkl-ilp64:sequential"            
+            #"/Qmkl:sequential"
+            #"/Qmkl-ilp64:sequential"
             # For malloc greater than 4GB Test : -->
             #"/IGC_ExtraOCLOptions:-ze-intel-greater-than-4GB-buffer-required"
             #"/IGC_ExtraOCLOptions:-cl-intel-greater-than-4GB-buffer-required"
@@ -141,7 +148,8 @@ if(WIN32)
                 "/LD"           # Specifies that a program should be linked as a dynamic-link (DLL) library. ( Release )
             ">"
             # add flag
-            "-fsycl"            # Enables a program to be compiled as a SYCL program rather than as plain C++11 program.            
+            "-fsycl"            # Enables a program to be compiled as a SYCL program rather than as plain C++11 program.
+            "OpenCL.lib"
         ">"
     )
 elseif(UNIX)
